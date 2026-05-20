@@ -1,0 +1,13 @@
+{
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/uploads/**": true,
+    "**/data/**": true
+  },
+  "search.exclude": {
+    "**/node_modules/**": true,
+    "**/uploads/**": true,
+    "**/data/**": true
+  }
+}
+
