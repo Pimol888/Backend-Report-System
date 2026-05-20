@@ -40,9 +40,11 @@ function createApp() {
   // root
   app.get("/", (req, res) => {
     res.json({
-      name: "BackendTicket API",
+      name: "OCM Report System API",
+      project: "OCM Report Management System (backend)",
       status: "ok",
       version: "1.0.0",
+      legacyFrom: "e-ticket codebase — /api/tickets and related tables remain until report APIs replace them",
       endpoints: {
         health: "GET /health",
 
@@ -52,12 +54,12 @@ function createApp() {
         forgotPassword: "POST /api/auth/forgot-password",
         resetPassword: "POST /api/auth/reset-password",
 
-        // TICKETS (create requires user auth)
+        // Legacy ticket module (from e-ticket; paths unchanged for compatibility)
         createTicket: "POST /api/tickets (Bearer user token; multipart images[] OR JSON imageUrl)",
         listTickets: "GET /api/tickets?status=open&page=1&limit=10",
         checkTicket: "GET /api/tickets/check?code=TCK-XXXXXX",
         updateTicket: "PUT /api/tickets/:id (multipart: images[]; appendImages=true|false)",
-        categories: "GET /api/categories (active categories for ticket form)",
+        categories: "GET /api/categories (active categories for legacy ticket form)",
 
         // ADMIN (all require Bearer token; login via POST /api/auth/login)
         adminMe: "GET /api/admin/me",
@@ -132,7 +134,7 @@ function createApp() {
 
       notes: {
         roles:
-          "user (tickets), admin (tickets + alerts + meeting-notes view + permission-requests), super_admin (tickets + alerts + team-alerts + meeting-notes CRUD + permission-request approve/reject)",
+          "user (legacy tickets), admin (legacy tickets + alerts + meeting-notes view + permission-requests), super_admin (legacy tickets + alerts + team-alerts + meeting-notes CRUD + permission-request approve/reject)",
         permissionRequestStatuses:
           "late (arrivalTime+reason), leave_early (leaveTime+reason), absent (fromDate+toDate+totalDays+reason), out_of_office (startTime+endTime+location+reason)",
         multiImageField: "Use form-data key `images` to upload multiple files",

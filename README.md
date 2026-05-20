@@ -1,115 +1,83 @@
-# Backend Report System (Express)
+# OCM Report Management — Backend
 
 **Repository:** [github.com/Pimol888/Backend-Report-System](https://github.com/Pimol888/Backend-Report-System)
 
-Express API for the OCM report frontend. This codebase is based on the same stack as the e-ticket project (MySQL/file DB, JWT auth, uploads, Socket.IO).
+Express API intended for the **OCM Report Management System** Vue frontend (`ocm-report-management-system`). This service was bootstrapped from an internal **e-ticket** codebase, so many routes and tables still use **ticket** naming until report-specific modules are implemented.
 
----
+## What this backend does today
 
-## Current scope (e-ticket template)
+- **Auth:** `POST /api/auth/register`, `POST /api/auth/login`, password reset, role-based JWT (`user`, `admin`, `super_admin`)
+- **Legacy ticket module:** `POST/GET/PUT /api/tickets`, admin ticket APIs, categories, uploads under `uploads/tickets/`
+- **Shared features:** alerts, team alerts, meeting notes, calendar notes, permission requests, work logs, Socket.IO for admin notifications
+- **Storage:** MySQL (recommended) or local JSON (`DB_DRIVER=file`, `data/db.json`)
 
-The copied e-ticket backend still exposes ticket APIs. Adapt routes and models for report submission (PDF/Word, cycles, department isolation) when you wire the Vue app.
+## Frontend
 
-Ticket backend where:
+Pair this API with the Vue app in the sibling folder:
 
-- **User**: can create a ticket **without authentication**
-- **Admin**: can log in with **authentication** and view tickets (dashboard APIs)
-- **Storage**: MySQL tables by default; set `DB_DRIVER=file` for local JSON (`data/db.json`)
-- **Images**: stored locally in `uploads/` and served from `/uploads/*`
+`../ocm-report-management-system/ocm-report-system`
+
+Use `VITE_API_BASE_URL` (or your app’s equivalent) pointing at this server’s origin (e.g. `http://127.0.0.1:3000`).
 
 ## Setup
 
-1) Install dependencies
+1. Install dependencies
 
 ```bash
 npm install
 ```
 
-2) Create a `.env` file
+2. Environment
 
 ```bash
 cp .env.example .env
 ```
 
-3) Configure MySQL (recommended)
+3. MySQL (recommended)
 
-Set these environment variables in `.env`:
+In `.env` set:
 
 - `DB_DRIVER=mysql`
-- `MYSQL_HOST=127.0.0.1` (or `DB_HOST`)
-- `MYSQL_PORT=3306` (or `DB_PORT`)
-- `MYSQL_USER=root` (or `DB_USER`)
-- `MYSQL_PASSWORD=your_password` (or `DB_PASSWORD`)
-- `MYSQL_DATABASE=ticket_system` (or `DB_NAME`)
-- `MYSQL_CONNECTION_LIMIT=10` (optional)
+- `MYSQL_HOST` / `MYSQL_PORT` / `MYSQL_USER` / `MYSQL_PASSWORD`
+- `MYSQL_DATABASE=ocm_report_system` (or any name you prefer; default in code matches `.env.example`)
 
-Create the database if it doesn't exist (tables are auto-created):
+Create the database if needed:
 
 ```sql
-CREATE DATABASE ticket_system;
+CREATE DATABASE ocm_report_system CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-If you want the old file DB, set `DB_DRIVER=file`.
+If you already have data under the old default name, set `MYSQL_DATABASE=ticket_system` in `.env` instead of migrating.
 
+Tables are created on first run when the app connects.
 
-4) Start the server
+For a quick local demo without MySQL:
+
+- `DB_DRIVER=file`
+
+4. Run
 
 ```bash
 npm run dev
 ```
 
-Server runs on `http://localhost:3000` (or `PORT` from `.env`).
+Default URL: `http://127.0.0.1:3000` (see `PORT` and `HOST` in `.env`).
 
-## Data fields for ticket creation
+## Seed admin
 
-Fields (multipart/form-data):
+On first boot, if no admin exists, one is created from:
 
-- `name`
-- `role`
-- `department`
-- `phoneNumber`
-- `problem`
-- `image` (file, optional)
+- `ADMIN_USERNAME` (default `admin`)
+- `ADMIN_PASSWORD` (default `admin123`)
 
-## API
+Use `POST /api/auth/login` with the same credentials (and the appropriate flow for admin vs user in `authController`) to obtain a JWT.
 
-### Health
+## API discovery
 
-- `GET /health`
+Open `GET /` on the running server for a JSON map of routes and access levels.
 
-### Public (no auth)
+## Next steps for reports
 
-- `POST /api/tickets` (multipart/form-data)
-
-Example using curl:
-
-```bash
-curl -X POST "http://localhost:3000/api/tickets" \
-  -F "name=John Doe" \
-  -F "role=Employee" \
-  -F "department=IT" \
-  -F "phoneNumber=5551234" \
-  -F "problem=My laptop is not working" \
-  -F "image=@/path/to/image.png"
-```
-
-### Admin (JWT auth)
-
-Seed admin is created on first run if no admin exists:
-
-- `ADMIN_USERNAME` (default: `admin`)
-- `ADMIN_PASSWORD` (default: `admin123`)
-
-Login:
-
-- `POST /api/admin/login`
-  - body: `{ "username": "admin", "password": "admin123" }`
-  - returns: `{ "token": "..." }`
-
-Then use the token:
-
-- `GET /api/admin/tickets` (Authorization: `Bearer <token>`)
-- `GET /api/admin/tickets/:id`
-- `PATCH /api/admin/tickets/:id`
-  - body: `{ "status": "open|in_progress|closed", "adminNote": "..." }`
-
+- Add report CRUD (cycles: monthly / quarterly / semiannual / yearly, PDF + Word uploads, department scope)
+- Optionally rename legacy `tickets` routes to `/api/reports` once the Vue app is wired to the new contract
+- Keep `node_modules`, `.env`, and `uploads/*` out of Git (see `.gitignore`)

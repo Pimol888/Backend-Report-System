@@ -25,7 +25,7 @@ const config = Object.freeze({
     port: num(process.env.DB_PORT || process.env.MYSQL_PORT, 3306),
     user: (process.env.DB_USER || process.env.MYSQL_USER || "root").trim(),
     password: (process.env.DB_PASSWORD || process.env.MYSQL_PASSWORD || "").trim(),
-    database: (process.env.DB_NAME || process.env.MYSQL_DATABASE || "ticket_system").trim(),
+    database: (process.env.DB_NAME || process.env.MYSQL_DATABASE || "ocm_report_system").trim(),
     connectionLimit: num(process.env.DB_CONNECTION_LIMIT || process.env.MYSQL_CONNECTION_LIMIT, 10),
   },
 

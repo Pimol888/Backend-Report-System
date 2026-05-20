@@ -13,7 +13,7 @@ function listenWithRetry({ server, app, host, port, maxTries }) {
       const onListening = () => {
         server.off("error", onError);
         // eslint-disable-next-line no-console
-        console.log(`Ticket backend listening on http://${host}:${p}`);
+        console.log(`OCM Report System API listening on http://${host}:${p}`);
         resolve({ server, port: p });
       };
 

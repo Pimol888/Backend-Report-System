@@ -14,7 +14,7 @@ function optionalUpload(req, res, next) {
   next();
 }
 
-// Create ticket: public (no login) OR admin; optional auth for guest submit
+// Legacy ticket routes (e-ticket module — keep until report APIs replace them)
 router.post(
   "/",
   optionalUserOrAdminAuth,

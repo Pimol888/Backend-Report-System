@@ -20,7 +20,7 @@ function userAuth(req, res, next) {
   }
 }
 
-/** Accepts user, admin, or super_admin token (e.g. for ticket creation when admin visits /submit). */
+/** Accepts user, admin, or super_admin token (e.g. for legacy ticket creation when admin visits /submit). */
 function userOrAdminAuth(req, res, next) {
   const header = req.headers.authorization || "";
   const [type, token] = header.split(" ");

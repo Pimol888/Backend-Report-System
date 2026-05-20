@@ -129,7 +129,7 @@ async function create(req) {
 }
 
 /**
- * Create a work log for a given admin (internal use, e.g. when they close a ticket).
+ * Create a work log for a given admin (internal use, e.g. when they close a legacy ticket).
  * @param {string} adminId - Admin user id (sub)
  * @param {{ title: string, description: string, workDate: string, ticketId?: number|string }} payload - title, description, workDate (YYYY-MM-DD), optional ticketId
  * @returns {Promise<Object>} Created work log

@@ -1,0 +1,13 @@
+{
+  "folders": [
+    {
+      "name": "report-system-backend",
+      "path": "."
+    },
+    {
+      "name": "ocm-report-system (Vue)",
+      "path": "../ocm-report-management-system/ocm-report-system"
+    }
+  ],
+  "settings": {}
+}

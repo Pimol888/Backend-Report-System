@@ -1,7 +1,13 @@
 {
   "name": "report-system-backend",
   "version": "1.0.0",
-  "description": "OCM Report Management System API (Express, based on e-ticket backend stack)",
+  "description": "OCM Report Management System — Express API (evolved from e-ticket codebase; legacy ticket routes remain until report APIs land)",
+  "keywords": [
+    "ocm",
+    "report-management",
+    "express",
+    "mysql"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/Pimol888/Backend-Report-System.git"
