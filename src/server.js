@@ -63,7 +63,7 @@ async function main() {
     if (token) {
       try {
         const payload = jwt.verify(token, config.jwtSecret);
-        if (payload.role === "admin" || payload.role === "super_admin") {
+        if (payload.role === "admin" || payload.role === "superadmin") {
           const adminId = String(payload.sub ?? payload.id ?? "");
           if (adminId) {
             socket.join(`admin:${adminId}`);

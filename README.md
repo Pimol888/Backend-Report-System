@@ -1,83 +1,67 @@
-# OCM Report Management — Backend
+# OCM Report Management Backend
 
-**Repository:** [github.com/Pimol888/Backend-Report-System](https://github.com/Pimol888/Backend-Report-System)
+Node.js + Express API for `ocm-report-management-system` frontend.
 
-Express API intended for the **OCM Report Management System** Vue frontend (`ocm-report-management-system`). This service was bootstrapped from an internal **e-ticket** codebase, so many routes and tables still use **ticket** naming until report-specific modules are implemented.
+## Stack
 
-## What this backend does today
-
-- **Auth:** `POST /api/auth/register`, `POST /api/auth/login`, password reset, role-based JWT (`user`, `admin`, `super_admin`)
-- **Legacy ticket module:** `POST/GET/PUT /api/tickets`, admin ticket APIs, categories, uploads under `uploads/tickets/`
-- **Shared features:** alerts, team alerts, meeting notes, calendar notes, permission requests, work logs, Socket.IO for admin notifications
-- **Storage:** MySQL (recommended) or local JSON (`DB_DRIVER=file`, `data/db.json`)
-
-## Frontend
-
-Pair this API with the Vue app in the sibling folder:
-
-`../ocm-report-management-system/ocm-report-system`
-
-Use `VITE_API_BASE_URL` (or your app’s equivalent) pointing at this server’s origin (e.g. `http://127.0.0.1:3000`).
+- Express
+- MySQL (`mysql2`)
+- JWT auth
+- Multer for PDF/Word uploads
 
 ## Setup
 
-1. Install dependencies
+1) Install deps
 
 ```bash
 npm install
 ```
 
-2. Environment
+2) Create `.env`
 
 ```bash
 cp .env.example .env
 ```
 
-3. MySQL (recommended)
+3) Ensure MySQL is running
 
-In `.env` set:
-
-- `DB_DRIVER=mysql`
-- `MYSQL_HOST` / `MYSQL_PORT` / `MYSQL_USER` / `MYSQL_PASSWORD`
-- `MYSQL_DATABASE=ocm_report_system` (or any name you prefer; default in code matches `.env.example`)
-
-Create the database if needed:
+You can create the DB manually:
 
 ```sql
-CREATE DATABASE ocm_report_system CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS ocm_report_system
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
 ```
 
-If you already have data under the old default name, set `MYSQL_DATABASE=ticket_system` in `.env` instead of migrating.
+Or just start the server; it auto-creates DB and required table (`app_state`) using your MySQL credentials.
 
-Tables are created on first run when the app connects.
-
-For a quick local demo without MySQL:
-
-- `DB_DRIVER=file`
-
-4. Run
+4) Run
 
 ```bash
 npm run dev
 ```
 
-Default URL: `http://127.0.0.1:3000` (see `PORT` and `HOST` in `.env`).
+Default API: `http://127.0.0.1:3000`
 
-## Seed admin
+## Default login accounts
 
-On first boot, if no admin exists, one is created from:
+- `admin` / `admin`
+- `superadmin` / `superadmin`
 
-- `ADMIN_USERNAME` (default `admin`)
-- `ADMIN_PASSWORD` (default `admin123`)
+Any other username logs in as a dynamic `user` account with password `password` for local testing.
 
-Use `POST /api/auth/login` with the same credentials (and the appropriate flow for admin vs user in `authController`) to obtain a JWT.
+## API endpoints
 
-## API discovery
-
-Open `GET /` on the running server for a JSON map of routes and access levels.
-
-## Next steps for reports
-
-- Add report CRUD (cycles: monthly / quarterly / semiannual / yearly, PDF + Word uploads, department scope)
-- Optionally rename legacy `tickets` routes to `/api/reports` once the Vue app is wired to the new contract
-- Keep `node_modules`, `.env`, and `uploads/*` out of Git (see `.gitignore`)
+- `POST /api/auth/login`
+- `GET /api/auth/me`
+- `GET /api/reports`
+- `GET /api/reports/stats/cycles`
+- `GET /api/reports/:reportId`
+- `POST /api/reports` (multipart fields: `pdf`, `word`)
+- `PATCH /api/reports/:reportId/status` (admin/superadmin)
+- `POST /api/reports/:reportId/notes` (admin/superadmin)
+- `POST /api/reports/:reportId/resubmit-files` (user)
+- `GET /api/reports/:reportId/files/:fileId`
+- `GET /api/team-members`
+- `GET /api/departments`
+- `GET /api/general-directorates`

@@ -1,9 +1,8 @@
 node_modules/
 dist/
 .env
-data/db.json
-data/*.db
 uploads/*
 !uploads/.gitkeep
+data/*.json
 *.log
 .DS_Store
