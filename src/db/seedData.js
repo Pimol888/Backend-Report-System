@@ -93,20 +93,11 @@ const USERS_SEED = [
   { id: "u-superadmin", email: "superadmin", password: "superadmin", role: "superadmin", name: "អ្នកគ្រប់គ្រងប្រព័ន្ធ", departmentId: null, courtesyName: "លោក", phone: "+855 12 222 333" },
 ];
 
-const PERIOD_BY_CYCLE = {
-  monthly: "ខែវិច្ឆិកា ២០២៥",
-  quarterly: "ត្រីមាសទី ៣ ឆ្នាំ ២០២៥",
-  semiannual: "ឆមាសទី ២ ឆ្នាំ ២០២៥",
-  yearly: "ឆ្នាំ ២០២៤",
-};
-
 module.exports = {
   ADMIN_NOTES_SEED,
   DEPARTMENTS,
   GENERAL_DIRECTORATES,
-  PERIOD_BY_CYCLE,
   REPORT_SEED_ROWS,
-  SAMPLE_REPORT_DESCRIPTION,
   TEAM_MEMBERS,
   USERS_SEED,
 };

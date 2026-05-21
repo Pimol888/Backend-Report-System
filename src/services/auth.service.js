@@ -2,39 +2,8 @@ const jwt = require("jsonwebtoken");
 const { randomUUID } = require("node:crypto");
 const { config } = require("../config/env");
 const { HttpError } = require("../utils/httpError");
-const { getDb, updateDb } = require("./store");
-
-async function ensureUserForLogin(identifier) {
-  const db = await getDb();
-  const lookup = String(identifier || "").trim().toLowerCase();
-  let user = db.users.find((u) => String(u.email).toLowerCase() === lookup);
-  if (user) return user;
-  if (!lookup || lookup === "admin" || lookup === "superadmin") return null;
-
-  user = await updateDb((state) => {
-    const maybeExisting = state.users.find((u) => String(u.email).toLowerCase() === lookup);
-    if (maybeExisting) return maybeExisting;
-    const member = state.teamMembers[Math.floor(Math.random() * state.teamMembers.length)] || {
-      id: "0",
-      name: "លោក អ្នកប្រើប្រាស់",
-      initials: "អ",
-    };
-    const departmentId = state.departments[0] ? state.departments[0].id : null;
-    const dynamicUser = {
-      id: `u-dynamic-${randomUUID()}`,
-      email: lookup,
-      password: "password",
-      role: "user",
-      name: member.name,
-      departmentId,
-      courtesyName: member.name.split(" ")[0] || "លោក",
-      phone: "+855 12 000 000",
-    };
-    state.users.push(dynamicUser);
-    return dynamicUser;
-  });
-  return user;
-}
+const userModel = require("../models/user.model");
+const { DEPARTMENTS, TEAM_MEMBERS } = require("../db/seedData");
 
 function toPublicUser(user) {
   return {
@@ -60,6 +29,29 @@ function signUser(user) {
   );
 }
 
+async function ensureUserForLogin(identifier) {
+  const lookup = String(identifier || "").trim().toLowerCase();
+  let user = await userModel.findByEmail(lookup);
+  if (user) return user;
+  if (!lookup || lookup === "admin" || lookup === "superadmin") return null;
+
+  const member = TEAM_MEMBERS[Math.floor(Math.random() * TEAM_MEMBERS.length)];
+  const departmentId = DEPARTMENTS[0]?.id || null;
+  const dynamicUser = {
+    id: `u-dynamic-${randomUUID()}`,
+    email: lookup,
+    password: "password",
+    role: "user",
+    name: member.name,
+    departmentId,
+    courtesyName: member.name.split(" ")[0] || "លោក",
+    phone: "+855 12 000 000",
+    initials: member.initials,
+  };
+  await userModel.createUser(dynamicUser);
+  return dynamicUser;
+}
+
 async function login(email, password) {
   const id = String(email || "").trim().toLowerCase();
   if (!id || !String(password || "").trim()) {
@@ -75,8 +67,7 @@ async function login(email, password) {
 }
 
 async function getUserById(userId) {
-  const db = await getDb();
-  const user = db.users.find((u) => u.id === userId);
+  const user = await userModel.findById(userId);
   return user ? toPublicUser(user) : null;
 }
 

@@ -1,6 +1,6 @@
 const fs = require("node:fs/promises");
 const path = require("node:path");
-const { initializeDatabase } = require("./report/store");
+const { initializeDatabase } = require("./db/init");
 
 async function ensureRuntimeDirs() {
   await fs.mkdir(path.join(process.cwd(), "uploads"), { recursive: true });

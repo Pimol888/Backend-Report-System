@@ -3,7 +3,7 @@ const path = require("node:path");
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
-const { reportApiRouter } = require("./routes/reportApi");
+const apiRouter = require("./routes");
 const { errorHandler } = require("./middleware/errorHandler");
 
 function createApp() {
@@ -60,7 +60,7 @@ function createApp() {
     res.json({ ok: true });
   });
 
-  app.use("/api", reportApiRouter);
+  app.use("/api", apiRouter);
 
   // 404 (unknown route)
   app.use((req, res) => {
