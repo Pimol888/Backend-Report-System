@@ -15,7 +15,8 @@
   "main": "src/server.js",
   "scripts": {
     "dev": "nodemon --watch src --ignore data --ignore uploads src/server.js",
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "db:init": "node scripts/init-db.js"
   },
   "author": "",
   "license": "ISC",
@@ -28,7 +29,8 @@
     "mysql2": "^3.11.5",
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
-    "nanoid": "^5.1.6"
+    "nanoid": "^5.1.6",
+    "socket.io": "^4.8.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"

@@ -15,6 +15,12 @@ const reportModel = require("../models/report.model");
 const reportFileModel = require("../models/reportFile.model");
 const userModel = require("../models/user.model");
 const { uploadRoot } = require("../middleware/upload.middleware");
+const {
+  notifyReportCreated,
+  notifyReportNoteAdded,
+  notifyReportResubmitted,
+  notifyReportStatusChanged,
+} = require("../realtime/notifier");
 
 function assertCanAccessReport(auth, report) {
   if (auth.role === "superadmin") return;
@@ -214,6 +220,7 @@ async function createReport(auth, body, files) {
   const created = await reportModel.findById(id);
   const reportFiles = await reportFileModel.listByReportId(id);
   const { _submittedAt, ...summary } = toSummaryRow(created, reportFiles);
+  notifyReportCreated(summary);
   return summary;
 }
 
@@ -230,6 +237,7 @@ async function updateReportStatus(auth, reportId, status) {
   const updated = await reportModel.findById(reportId);
   const files = await reportFileModel.listByReportId(reportId);
   const { _submittedAt, ...summary } = toSummaryRow(updated, files);
+  notifyReportStatusChanged(summary);
   return summary;
 }
 
@@ -253,7 +261,9 @@ async function addReportNote(auth, reportId, text, kind = "comment") {
     createdAt: toMysqlDatetime(now),
   };
   await adminNoteModel.insertNote(note);
-  return { text: note.text, author: note.author, timeLabel: note.timeLabel, kind: note.kind };
+  const publicNote = { text: note.text, author: note.author, timeLabel: note.timeLabel, kind: note.kind };
+  notifyReportNoteAdded(report, publicNote);
+  return publicNote;
 }
 
 async function resubmitFiles(auth, reportId, files) {
@@ -291,7 +301,14 @@ async function resubmitFiles(auth, reportId, files) {
     conn.release();
   }
 
-  return getReportDetail(auth, reportId);
+  const detail = await getReportDetail(auth, reportId);
+  notifyReportResubmitted({
+    id: reportId,
+    departmentId: report.departmentId,
+    submitterId: report.submitterId,
+    status: "pending",
+  });
+  return detail;
 }
 
 async function getReportFile(auth, reportId, fileId) {

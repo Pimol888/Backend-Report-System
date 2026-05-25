@@ -52,6 +52,17 @@ function createApp() {
       roles: ["user", "admin", "superadmin"],
       cycles: ["monthly", "quarterly", "semiannual", "yearly"],
       statuses: ["pending", "reviewed"],
+      socket: {
+        path: "/socket.io",
+        auth: { token: "<jwt-from-/api/auth/login>" },
+        events: [
+          "report:created",
+          "report:updated",
+          "report:status-changed",
+          "report:note-added",
+          "report:resubmitted",
+        ],
+      },
     });
   });
 

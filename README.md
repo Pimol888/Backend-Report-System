@@ -13,6 +13,7 @@ src/
   controllers/     # HTTP handlers
   routes/          # Express routers
   middleware/      # auth, upload, errors
+  realtime/        # socket.io server, events, notifier
   constants/       # report labels
   utils/           # formatting helpers
   app.js           # Express app
@@ -61,3 +62,33 @@ VITE_API_BASE_URL=http://127.0.0.1:3000/api
 - `POST /api/reports/:id/notes`
 - `POST /api/reports/:id/resubmit-files`
 - `GET /api/team-members`, `/api/departments`, `/api/general-directorates`
+
+## Realtime (Socket.IO)
+
+Endpoint: `ws://<host>:<port>/socket.io`
+
+Auth: pass JWT via handshake `auth.token` (or `Authorization: Bearer <token>` header).
+
+Rooms joined automatically based on JWT:
+- `user:<id>` — submitter
+- `department:<id>` — department members
+- `admins` — admin + superadmin
+- `superadmins` — superadmin only
+
+Server events:
+- `report:created`
+- `report:updated`
+- `report:status-changed`
+- `report:note-added`
+- `report:resubmitted`
+
+Client example:
+
+```js
+import { io } from 'socket.io-client'
+const socket = io('http://127.0.0.1:3000', {
+  path: '/socket.io',
+  auth: { token: '<jwt>' },
+})
+socket.on('report:created', (payload) => console.log(payload))
+```

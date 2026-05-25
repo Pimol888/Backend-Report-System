@@ -104,11 +104,12 @@ async function insertReport(report, conn = null) {
   );
 }
 
-async function updateStatus(id, { status, reviewedAt, reviewerName }) {
+async function updateStatus(id, { status, reviewedAt, reviewerName, updatedAt }) {
   const pool = getPool();
+  const stamp = updatedAt || reviewedAt || new Date();
   await pool.query(
     "UPDATE reports SET status = ?, reviewed_at = ?, reviewer_name = ?, updated_at = ? WHERE id = ?",
-    [status, reviewedAt, reviewerName, reviewedAt || new Date(), id],
+    [status, reviewedAt, reviewerName, stamp, id],
   );
 }
 
