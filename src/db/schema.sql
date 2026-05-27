@@ -75,3 +75,22 @@ CREATE TABLE IF NOT EXISTS admin_notes (
   CONSTRAINT fk_admin_notes_report FOREIGN KEY (report_id) REFERENCES reports(id) ON DELETE CASCADE,
   INDEX idx_admin_notes_report (report_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS report_activity_logs (
+  id VARCHAR(36) PRIMARY KEY,
+  report_id VARCHAR(64) NOT NULL,
+  actor_id VARCHAR(64) NULL,
+  actor_name VARCHAR(255) NOT NULL,
+  action ENUM('created', 'status_changed', 'note_added', 'files_resubmitted') NOT NULL,
+  from_status ENUM('pending', 'reviewed') NULL,
+  to_status ENUM('pending', 'reviewed') NULL,
+  message VARCHAR(500) NULL,
+  metadata_json TEXT NULL,
+  created_at DATETIME NOT NULL,
+  CONSTRAINT fk_report_activity_logs_report FOREIGN KEY (report_id) REFERENCES reports(id) ON DELETE CASCADE,
+  CONSTRAINT fk_report_activity_logs_actor FOREIGN KEY (actor_id) REFERENCES users(id) ON DELETE SET NULL,
+  INDEX idx_report_activity_logs_report (report_id),
+  INDEX idx_report_activity_logs_actor (actor_id),
+  INDEX idx_report_activity_logs_action (action),
+  INDEX idx_report_activity_logs_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

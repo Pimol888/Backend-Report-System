@@ -1,94 +1,134 @@
 # OCM Report System Backend
 
-Node.js / Express API for the OCM Report Management System frontend.
+Node.js / Express REST API + Socket.IO for the OCM Report Management System.
+
+**Scope:** backend and database only. The Vue frontend is not wired to this API yet.
 
 ## Structure
 
 ```
 src/
-  config/          # env configuration
-  db/              # MySQL pool, schema.sql, init + seed
-  models/          # data access (SQL per entity)
-  services/        # business logic
-  controllers/     # HTTP handlers
-  routes/          # Express routers
-  middleware/      # auth, upload, errors
-  realtime/        # socket.io server, events, notifier
-  constants/       # report labels
-  utils/           # formatting helpers
-  app.js           # Express app
-  server.js        # entry + bootstrap
+  config/          env (DB, JWT, host/port)
+  db/              pool, schema.sql, init + seed
+  models/          MySQL data access per table
+  services/        business logic
+  controllers/     HTTP handlers
+  routes/          Express routers
+  middleware/      auth, upload, errors
+  realtime/        Socket.IO (events + notifier)
+  constants/       report labels
+  utils/           formatting, HttpError
+  app.js           Express app
+  server.js        HTTP server + Socket.IO
+db/
+  reportdb.sql     full dump for MySQL Workbench / teammates
+scripts/
+  init-db.js, reset-db.js, export-sql.js, import-sql.js, check-db.js
 ```
 
-## Setup
+## Quick start
 
-1. Copy `.env.example` to `.env` and set MySQL credentials.
-2. Start MySQL (port 3306).
-3. Install and run:
+1. Copy `.env.example` → `.env` and set MySQL password.
+2. Start MySQL on port 3306.
+3. Initialize database:
 
 ```bash
 npm install
+npm run db:init
+```
+
+4. Run API:
+
+```bash
 npm run dev
 ```
 
-On first start the API creates database `ocm_report_system`, applies `src/db/schema.sql`, and seeds 20 sample reports.
+API: `http://127.0.0.1:3000`  
+Socket.IO: `ws://127.0.0.1:3000/socket.io` (JWT in `auth.token`)
+
+## Database
+
+| Command | Purpose |
+|---|---|
+| `npm run db:init` | Create DB, apply schema, seed if empty |
+| `npm run db:reset` | Drop DB, recreate + seed (**destructive**) |
+| `npm run db:export` | Write `db/<DB_NAME>.sql` (schema + data) |
+| `npm run db:import` | Import `db/<DB_NAME>.sql` |
+| `npm run db:check` | List tables, row counts, admin users |
+
+**MySQL Workbench:** *File → Run SQL Script…* → `db/reportdb.sql`
 
 ## Default accounts
 
-| Username     | Password     | Role        |
-|-------------|--------------|-------------|
-| admin       | admin        | admin       |
-| superadmin  | superadmin   | superadmin  |
-| member1     | password     | user        |
-| any email   | password     | user (auto-created) |
+| Email | Password | Role |
+|---|---|---|
+| `admin` | `admin` | admin |
+| `superadmin` | `superadmin` | superadmin |
+| `member1` … `member12` | `password` | user |
+| any other email | `password` | user (auto-created on first login) |
 
-## Frontend
+## REST API
 
-Set in `ocm-report-system/.env`:
+All JSON responses: `{ "success": true, "data": ... }`  
+Auth: `Authorization: Bearer <token>` from `POST /api/auth/login`
 
-```
-VITE_API_BASE_URL=http://127.0.0.1:3000/api
-```
+| Method | Path | Roles | Notes |
+|---|---|---|---|
+| POST | `/api/auth/login` | public | `{ email, password }` |
+| GET | `/api/auth/me` | any | current user |
+| GET | `/api/reports` | any | query: `cycle`, `status`, `search`, `page`, `limit`, `sort`, `memberId`, `departmentId`, `generalDirectorateId` |
+| GET | `/api/reports/stats/cycles` | any | counts by cycle |
+| GET | `/api/reports/:reportId` | any | detail + `activityLogs` |
+| GET | `/api/reports/:reportId/activity-logs` | any | audit trail only |
+| POST | `/api/reports` | user+ | multipart: `pdf`, `word`; body: `title`, `cycle`, `reportDate`, optional `description`, `periodLabel` |
+| PATCH | `/api/reports/:reportId/status` | admin, superadmin | `{ "status": "pending" \| "reviewed" }` |
+| POST | `/api/reports/:reportId/notes` | admin, superadmin | `{ "text", "kind": "comment" \| "request-files" }` |
+| POST | `/api/reports/:reportId/resubmit-files` | user | multipart: `pdf`, `word` |
+| GET | `/api/reports/:reportId/files/:fileId` | any | file download |
+| GET | `/api/team-members` | any | scoped by role |
+| GET | `/api/departments` | any | |
+| GET | `/api/general-directorates` | any | |
 
-## API
+## Tables
 
-- `POST /api/auth/login`
-- `GET /api/auth/me`
-- `GET /api/reports`
-- `GET /api/reports/stats/cycles`
-- `GET /api/reports/:id`
-- `POST /api/reports` (multipart: pdf, word)
-- `PATCH /api/reports/:id/status`
-- `POST /api/reports/:id/notes`
-- `POST /api/reports/:id/resubmit-files`
-- `GET /api/team-members`, `/api/departments`, `/api/general-directorates`
+- `general_directorates`, `departments`, `users`
+- `reports`, `report_files`, `admin_notes`, `report_activity_logs`
 
-## Realtime (Socket.IO)
+## Socket.IO events
 
-Endpoint: `ws://<host>:<port>/socket.io`
+Emitted after create / status change / note / resubmit:
 
-Auth: pass JWT via handshake `auth.token` (or `Authorization: Bearer <token>` header).
-
-Rooms joined automatically based on JWT:
-- `user:<id>` — submitter
-- `department:<id>` — department members
-- `admins` — admin + superadmin
-- `superadmins` — superadmin only
-
-Server events:
 - `report:created`
-- `report:updated`
 - `report:status-changed`
 - `report:note-added`
 - `report:resubmitted`
 
-Client example:
+Connect with JWT:
 
 ```js
-import { io } from 'socket.io-client'
-const socket = io('http://127.0.0.1:3000', {
-  path: '/socket.io',
-  auth: { token: '<jwt>' },
-})
-socket.on('report:created', (payload) => console.log(payload))
+const { io } = require("socket.io-client");
+const socket = io("http://127.0.0.1:3000", {
+  path: "/socket.io",
+  auth: { token: "<jwt>" },
+});
+socket.on("report:created", (payload) => console.log(payload));
+```
+
+## Sharing schema/data with teammates
+
+After changes in MySQL Workbench:
+
+```bash
+npm run db:export
+git add db/reportdb.sql src/db/schema.sql
+git commit && git push
+```
+
+Teammates: `git pull` → `npm run db:import` (or run `db/reportdb.sql` in Workbench).
+
+After changes to `schema.sql` / `seedData.js` only:
+
+```bash
+npm run db:reset
+npm run db:export   # optional: refresh dump
 ```

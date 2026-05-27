@@ -11,6 +11,7 @@ const {
 } = require("../utils/format");
 const adminNoteModel = require("../models/adminNote.model");
 const departmentModel = require("../models/department.model");
+const reportActivityLogModel = require("../models/reportActivityLog.model");
 const reportModel = require("../models/report.model");
 const reportFileModel = require("../models/reportFile.model");
 const userModel = require("../models/user.model");
@@ -105,6 +106,18 @@ function toDetail(report, files, notes) {
   };
 }
 
+function toPublicActivityLog(entry) {
+  return {
+    action: entry.action,
+    actorName: entry.actorName,
+    fromStatus: entry.fromStatus || undefined,
+    toStatus: entry.toStatus || undefined,
+    message: entry.message || undefined,
+    metadata: entry.metadata || undefined,
+    createdAt: entry.createdAt,
+  };
+}
+
 async function listReports(auth, query = {}) {
   const filters = { ...authFilters(auth) };
   if (query.cycle) filters.cycle = query.cycle;
@@ -146,11 +159,15 @@ async function getReportDetail(auth, reportId) {
   const report = await reportModel.findById(reportId);
   if (!report) throw new HttpError(404, "Report not found");
   assertCanAccessReport(auth, report);
-  const [files, notes] = await Promise.all([
+  const [files, notes, activityLogs] = await Promise.all([
     reportFileModel.listByReportId(report.id),
     adminNoteModel.listByReportId(report.id),
+    reportActivityLogModel.listByReportId(report.id),
   ]);
-  return toDetail(report, files, notes);
+  return {
+    ...toDetail(report, files, notes),
+    activityLogs: activityLogs.map(toPublicActivityLog),
+  };
 }
 
 function extractUpload(files, field) {
@@ -209,6 +226,20 @@ async function createReport(auth, body, files) {
       { id: randomUUID(), reportId: id, type: "word", name: word.name, storedName: word.storedName, sizeBytes: word.sizeBytes, uploadedAt: now, isResubmission: false },
       conn,
     );
+    await reportActivityLogModel.insertActivityLog(
+      {
+        id: randomUUID(),
+        reportId: id,
+        actorId: auth.id,
+        actorName: auth.name || submitter?.name || "User",
+        action: "created",
+        toStatus: "pending",
+        message: "Report submitted",
+        metadata: { fileTypes: ["pdf", "word"] },
+        createdAt: now,
+      },
+      conn,
+    );
     await conn.commit();
   } catch (err) {
     await conn.rollback();
@@ -232,7 +263,32 @@ async function updateReportStatus(auth, reportId, status) {
 
   const reviewedAt = status === "reviewed" ? toMysqlDatetime(new Date()) : null;
   const reviewerName = status === "reviewed" ? auth.name : null;
-  await reportModel.updateStatus(reportId, { status, reviewedAt, reviewerName });
+  const now = toMysqlDatetime(new Date());
+  const conn = await getConnection();
+  try {
+    await conn.beginTransaction();
+    await reportModel.updateStatus(reportId, { status, reviewedAt, reviewerName, updatedAt: now }, conn);
+    await reportActivityLogModel.insertActivityLog(
+      {
+        id: randomUUID(),
+        reportId,
+        actorId: auth.id,
+        actorName: auth.name || "Admin",
+        action: "status_changed",
+        fromStatus: report.status,
+        toStatus: status,
+        message: `Status changed from ${report.status} to ${status}`,
+        createdAt: now,
+      },
+      conn,
+    );
+    await conn.commit();
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
 
   const updated = await reportModel.findById(reportId);
   const files = await reportFileModel.listByReportId(reportId);
@@ -260,7 +316,30 @@ async function addReportNote(auth, reportId, text, kind = "comment") {
     kind,
     createdAt: toMysqlDatetime(now),
   };
-  await adminNoteModel.insertNote(note);
+  const conn = await getConnection();
+  try {
+    await conn.beginTransaction();
+    await adminNoteModel.insertNote(note, conn);
+    await reportActivityLogModel.insertActivityLog(
+      {
+        id: randomUUID(),
+        reportId,
+        actorId: auth.id,
+        actorName: auth.name || "Admin",
+        action: "note_added",
+        message: kind === "request-files" ? "Admin requested file resubmission" : "Admin added a note",
+        metadata: { kind },
+        createdAt: note.createdAt,
+      },
+      conn,
+    );
+    await conn.commit();
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
   const publicNote = { text: note.text, author: note.author, timeLabel: note.timeLabel, kind: note.kind };
   notifyReportNoteAdded(report, publicNote);
   return publicNote;
@@ -292,7 +371,22 @@ async function resubmitFiles(auth, reportId, files) {
       { id: randomUUID(), reportId, type: "word", name: word.name, storedName: word.storedName, sizeBytes: word.sizeBytes, uploadedAt: now, isResubmission: true },
       conn,
     );
-    await reportModel.updateStatus(reportId, { status: "pending", reviewedAt: null, reviewerName: null });
+    await reportModel.updateStatus(reportId, { status: "pending", reviewedAt: null, reviewerName: null, updatedAt: now }, conn);
+    await reportActivityLogModel.insertActivityLog(
+      {
+        id: randomUUID(),
+        reportId,
+        actorId: auth.id,
+        actorName: auth.name || "User",
+        action: "files_resubmitted",
+        fromStatus: report.status,
+        toStatus: "pending",
+        message: "Report files resubmitted",
+        metadata: { fileTypes: ["pdf", "word"] },
+        createdAt: now,
+      },
+      conn,
+    );
     await conn.commit();
   } catch (err) {
     await conn.rollback();
@@ -309,6 +403,14 @@ async function resubmitFiles(auth, reportId, files) {
     status: "pending",
   });
   return detail;
+}
+
+async function getReportActivityLogs(auth, reportId) {
+  const report = await reportModel.findById(reportId);
+  if (!report) throw new HttpError(404, "Report not found");
+  assertCanAccessReport(auth, report);
+  const activityLogs = await reportActivityLogModel.listByReportId(reportId);
+  return activityLogs.map(toPublicActivityLog);
 }
 
 async function getReportFile(auth, reportId, fileId) {
@@ -331,6 +433,7 @@ async function getReportFile(auth, reportId, fileId) {
 module.exports = {
   addReportNote,
   createReport,
+  getReportActivityLogs,
   getReportDetail,
   getReportFile,
   getReportStats,

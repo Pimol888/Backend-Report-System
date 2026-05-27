@@ -40,6 +40,7 @@ function createApp() {
         reportsList: "GET /api/reports",
         reportsStats: "GET /api/reports/stats/cycles",
         reportDetail: "GET /api/reports/:reportId",
+        reportActivityLogs: "GET /api/reports/:reportId/activity-logs",
         reportCreate: "POST /api/reports (multipart: pdf + word)",
         reportStatus: "PATCH /api/reports/:reportId/status",
         reportNotes: "POST /api/reports/:reportId/notes",

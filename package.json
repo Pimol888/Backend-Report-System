@@ -16,7 +16,11 @@
   "scripts": {
     "dev": "nodemon --watch src --ignore data --ignore uploads src/server.js",
     "start": "node src/server.js",
-    "db:init": "node scripts/init-db.js"
+    "db:init": "node scripts/init-db.js",
+    "db:reset": "node scripts/reset-db.js",
+    "db:export": "node scripts/export-sql.js",
+    "db:import": "node scripts/import-sql.js",
+    "db:check": "node scripts/check-db.js"
   },
   "author": "",
   "license": "ISC",

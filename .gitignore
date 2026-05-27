@@ -6,3 +6,8 @@ uploads/*
 data/*.json
 *.log
 .DS_Store
+
+# keep db dumps so teammates get the latest data
+!db/
+!db/*.sql
+

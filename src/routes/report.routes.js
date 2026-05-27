@@ -10,6 +10,7 @@ router.use(authenticate);
 
 router.get("/", asyncHandler(reportController.list));
 router.get("/stats/cycles", asyncHandler(reportController.stats));
+router.get("/:reportId/activity-logs", asyncHandler(reportController.activityLogs));
 router.get("/:reportId", asyncHandler(reportController.detail));
 router.post("/", uploadRequiredReportFiles, asyncHandler(reportController.create));
 router.patch("/:reportId/status", requireRoles(["admin", "superadmin"]), asyncHandler(reportController.updateStatus));

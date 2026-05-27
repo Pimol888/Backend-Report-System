@@ -141,6 +141,22 @@ async function seedDatabase() {
         );
       }
 
+      await conn.query(
+        `INSERT IGNORE INTO report_activity_logs
+         (id, report_id, actor_id, actor_name, action, from_status, to_status, message, metadata_json, created_at)
+         VALUES (?, ?, ?, ?, 'created', NULL, 'pending', 'Report submitted (seed)', NULL, ?)`,
+        [randomUUID(), row.id, submitter.id, submitter.name, submittedMysql],
+      );
+
+      if (row.status === "reviewed") {
+        await conn.query(
+          `INSERT IGNORE INTO report_activity_logs
+           (id, report_id, actor_id, actor_name, action, from_status, to_status, message, metadata_json, created_at)
+           VALUES (?, ?, ?, ?, 'status_changed', 'pending', 'reviewed', 'Report reviewed (seed)', NULL, ?)`,
+          [randomUUID(), row.id, "u-admin", "សុំ ចិន្តា", submittedMysql],
+        );
+      }
+
       const notes = ADMIN_NOTES_SEED[row.id];
       if (notes) {
         for (const note of notes) {
@@ -148,6 +164,20 @@ async function seedDatabase() {
             `INSERT IGNORE INTO admin_notes (id, report_id, text, author, time_label, kind, created_at)
              VALUES (?, ?, ?, ?, ?, ?, ?)`,
             [randomUUID(), row.id, note.text, note.author, note.timeLabel, note.kind, submittedMysql],
+          );
+          await conn.query(
+            `INSERT IGNORE INTO report_activity_logs
+             (id, report_id, actor_id, actor_name, action, from_status, to_status, message, metadata_json, created_at)
+             VALUES (?, ?, ?, ?, 'note_added', NULL, NULL, ?, ?, ?)`,
+            [
+              randomUUID(),
+              row.id,
+              "u-admin",
+              note.author,
+              note.kind === "request-files" ? "Admin requested file resubmission" : "Admin added a note",
+              JSON.stringify({ kind: note.kind }),
+              submittedMysql,
+            ],
           );
         }
       }

@@ -15,6 +15,11 @@ async function detail(req, res) {
   res.json({ success: true, data });
 }
 
+async function activityLogs(req, res) {
+  const data = await reportService.getReportActivityLogs(req.auth, req.params.reportId);
+  res.json({ success: true, data });
+}
+
 async function create(req, res) {
   const data = await reportService.createReport(req.auth, req.body || {}, req.files || {});
   res.status(201).json({ success: true, data });
@@ -46,6 +51,7 @@ async function downloadFile(req, res) {
 }
 
 module.exports = {
+  activityLogs,
   addNote,
   create,
   detail,
