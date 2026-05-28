@@ -89,8 +89,39 @@ const ADMIN_NOTES_SEED = {
 };
 
 const USERS_SEED = [
-  { id: "u-admin", email: "admin", password: "admin", role: "admin", name: "សុំ ចិន្តា", departmentId: "dept-digital", courtesyName: "លោកស្រី", phone: "+855 12 111 222" },
-  { id: "u-superadmin", email: "superadmin", password: "superadmin", role: "superadmin", name: "អ្នកគ្រប់គ្រងប្រព័ន្ធ", departmentId: null, courtesyName: "លោក", phone: "+855 12 222 333" },
+  {
+    id: "u-admin",
+    email: "admin",
+    password: "admin",
+    role: "admin",
+    name: "សុំ ចិន្តា",
+    departmentId: "dept-digital",
+    generalDirectorateId: null,
+    courtesyName: "លោកស្រី",
+    phone: "+855 12 111 222",
+  },
+  {
+    id: "u-orgadmin",
+    email: "orgadmin",
+    password: "orgadmin",
+    role: "orgadmin",
+    name: "លោក អគ្គនាយកដ្ឋាន រដ្ឋបាលបច្ចេកវិទ្យា",
+    departmentId: null,
+    generalDirectorateId: "gd-admin-tech",
+    courtesyName: "លោក",
+    phone: "+855 12 333 444",
+  },
+  {
+    id: "u-superadmin",
+    email: "superadmin",
+    password: "superadmin",
+    role: "superadmin",
+    name: "លោក អគ្គនាយកដ្ឋានរដ្ឋបាល និងទីស្តីការគណៈរដ្ឋមន្ត្រី",
+    departmentId: null,
+    generalDirectorateId: null,
+    courtesyName: "លោក",
+    phone: "+855 12 222 333",
+  },
 ];
 
 module.exports = {

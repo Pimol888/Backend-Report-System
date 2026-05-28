@@ -1,13 +1,14 @@
 const departmentModel = require("../models/department.model");
 const generalDirectorateModel = require("../models/generalDirectorate.model");
 const userModel = require("../models/user.model");
+const { resolveListScope } = require("../utils/scope");
 
 async function getMetaData(auth) {
-  const departmentFilter = auth.role === "superadmin" ? null : auth.departmentId;
+  const scope = resolveListScope(auth);
   const [teamMembers, departments, generalDirectorates] = await Promise.all([
-    userModel.listTeamMembers(departmentFilter),
-    departmentModel.listDepartments(departmentFilter),
-    generalDirectorateModel.listGeneralDirectorates(departmentFilter),
+    userModel.listTeamMembers(scope),
+    departmentModel.listDepartments(scope),
+    generalDirectorateModel.listGeneralDirectorates(scope),
   ]);
   return { teamMembers, departments, generalDirectorates };
 }

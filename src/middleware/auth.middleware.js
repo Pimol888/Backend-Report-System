@@ -20,6 +20,7 @@ function authenticate(req, res, next) {
       role: payload.role,
       name: payload.name,
       departmentId: payload.departmentId || null,
+      generalDirectorateId: payload.generalDirectorateId || null,
     };
     next();
   } catch (err) {

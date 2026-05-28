@@ -58,12 +58,22 @@ Socket.IO: `ws://127.0.0.1:3000/socket.io` (JWT in `auth.token`)
 
 **MySQL Workbench:** *File → Run SQL Script…* → `db/reportdb.sql`
 
+## Roles
+
+| Role | Meaning |
+|---|---|
+| `user` | Normal user (report submitter) |
+| `admin` | Head of Department (department scope) |
+| `orgadmin` | Director General (general directorate scope) |
+| `superadmin` | Director General, Department of Assembly and General Affairs (national scope) |
+
 ## Default accounts
 
 | Email | Password | Role |
 |---|---|---|
-| `admin` | `admin` | admin |
-| `superadmin` | `superadmin` | superadmin |
+| `admin` | `admin` | admin (Head of Department) |
+| `orgadmin` | `orgadmin` | orgadmin (Director General) |
+| `superadmin` | `superadmin` | superadmin (national) |
 | `member1` … `member12` | `password` | user |
 | any other email | `password` | user (auto-created on first login) |
 
@@ -81,8 +91,8 @@ Auth: `Authorization: Bearer <token>` from `POST /api/auth/login`
 | GET | `/api/reports/:reportId` | any | detail + `activityLogs` |
 | GET | `/api/reports/:reportId/activity-logs` | any | audit trail only |
 | POST | `/api/reports` | user+ | multipart: `pdf`, `word`; body: `title`, `cycle`, `reportDate`, optional `description`, `periodLabel` |
-| PATCH | `/api/reports/:reportId/status` | admin, superadmin | `{ "status": "pending" \| "reviewed" }` |
-| POST | `/api/reports/:reportId/notes` | admin, superadmin | `{ "text", "kind": "comment" \| "request-files" }` |
+| PATCH | `/api/reports/:reportId/status` | admin, orgadmin, superadmin | `{ "status": "pending" \| "reviewed" }` |
+| POST | `/api/reports/:reportId/notes` | admin, orgadmin, superadmin | `{ "text", "kind": "comment" \| "request-files" }` |
 | POST | `/api/reports/:reportId/resubmit-files` | user | multipart: `pdf`, `word` |
 | GET | `/api/reports/:reportId/files/:fileId` | any | file download |
 | GET | `/api/team-members` | any | scoped by role |

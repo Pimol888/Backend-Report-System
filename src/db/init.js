@@ -2,6 +2,7 @@ const fs = require("node:fs/promises");
 const path = require("node:path");
 const mysql = require("mysql2/promise");
 const { randomUUID } = require("node:crypto");
+const bcrypt = require("bcryptjs");
 const { config } = require("../config/env");
 const { PERIOD_BY_CYCLE } = require("../constants/report");
 const { parseFileSummary, parseSizeToBytes, parseSubmittedAtLabel, toMysqlDatetime } = require("../utils/format");
@@ -64,12 +65,23 @@ async function seedDatabase() {
         );
       }
     }
-
+      
     for (const user of USERS_SEED) {
+      const hashedPassword = await bcrypt.hash(user.password, 10);
       await conn.query(
-        `INSERT IGNORE INTO users (id, email, password, role, name, courtesy_name, phone, department_id, initials)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL)`,
-        [user.id, user.email, user.password, user.role, user.name, user.courtesyName, user.phone, user.departmentId],
+        `INSERT IGNORE INTO users (id, email, password, role, name, courtesy_name, phone, department_id, general_directorate_id, initials)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)`,
+        [
+          user.id,
+          user.email,
+          hashedPassword,
+          user.role,
+          user.name,
+          user.courtesyName,
+          user.phone,
+          user.departmentId,
+          user.generalDirectorateId || null,
+        ],
       );
     }
 
@@ -79,9 +91,19 @@ async function seedDatabase() {
       const userId = `u-member-${member.id}`;
       const courtesyName = member.name.split(" ")[0] || "លោក";
       await conn.query(
-        `INSERT IGNORE INTO users (id, email, password, role, name, courtesy_name, phone, department_id, initials)
-         VALUES (?, ?, ?, 'user', ?, ?, ?, ?, ?)`,
-        [userId, `member${member.id}`, "password", member.name, courtesyName, "+855 12 000 000", department.id, member.initials],
+        `INSERT IGNORE INTO users (id, email, password, role, name, courtesy_name, phone, department_id, general_directorate_id, initials)
+         VALUES (?, ?, ?, 'user', ?, ?, ?, ?, ?, ?)`,
+        [
+          userId,
+          `member${member.id}`,
+          await bcrypt.hash("password", 10),
+          member.name,
+          courtesyName,
+          "+855 12 000 000",
+          department.id,
+          department.generalDirectorateId,
+          member.initials,
+        ],
       );
       userByName.set(member.name, { id: userId, name: member.name });
     }

@@ -9,6 +9,8 @@ const EVENTS = Object.freeze({
 const ROOMS = Object.freeze({
   admins: () => "admins",
   superadmins: () => "superadmins",
+  orgadmins: () => "orgadmins",
+  generalDirectorate: (id) => `gd:${id}`,
   user: (userId) => `user:${userId}`,
   department: (departmentId) => `department:${departmentId}`,
 });

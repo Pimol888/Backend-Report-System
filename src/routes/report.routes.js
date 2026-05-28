@@ -13,8 +13,16 @@ router.get("/stats/cycles", asyncHandler(reportController.stats));
 router.get("/:reportId/activity-logs", asyncHandler(reportController.activityLogs));
 router.get("/:reportId", asyncHandler(reportController.detail));
 router.post("/", uploadRequiredReportFiles, asyncHandler(reportController.create));
-router.patch("/:reportId/status", requireRoles(["admin", "superadmin"]), asyncHandler(reportController.updateStatus));
-router.post("/:reportId/notes", requireRoles(["admin", "superadmin"]), asyncHandler(reportController.addNote));
+router.patch(
+  "/:reportId/status",
+  requireRoles(["admin", "orgadmin", "superadmin"]),
+  asyncHandler(reportController.updateStatus),
+);
+router.post(
+  "/:reportId/notes",
+  requireRoles(["admin", "orgadmin", "superadmin"]),
+  asyncHandler(reportController.addNote),
+);
 router.post(
   "/:reportId/resubmit-files",
   requireRoles(["user"]),

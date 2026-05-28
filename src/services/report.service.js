@@ -22,24 +22,7 @@ const {
   notifyReportResubmitted,
   notifyReportStatusChanged,
 } = require("../realtime/notifier");
-
-function assertCanAccessReport(auth, report) {
-  if (auth.role === "superadmin") return;
-  if (auth.role === "admin") {
-    if (!auth.departmentId || auth.departmentId !== report.departmentId) {
-      throw new HttpError(403, "Cannot access report outside your department");
-    }
-    return;
-  }
-  if (auth.departmentId && auth.departmentId !== report.departmentId) {
-    throw new HttpError(403, "Cannot access report outside your department");
-  }
-}
-
-function authFilters(auth) {
-  if (auth.role === "superadmin") return {};
-  return { departmentId: auth.departmentId };
-}
+const { assertCanAccessReport, authFilters, resolveListScope } = require("../utils/scope");
 
 function toSummaryRow(report, files) {
   const hasPdf = files.some((f) => f.type === "pdf");
@@ -128,7 +111,7 @@ async function listReports(auth, query = {}) {
   if (query.sort) filters.sort = query.sort;
 
   if (query.memberId) {
-    const members = await userModel.listTeamMembers(auth.role === "superadmin" ? null : auth.departmentId);
+    const members = await userModel.listTeamMembers(resolveListScope(auth));
     const member = members.find((m) => m.id === String(query.memberId));
     if (!member) return { items: [], total: 0, page: 1, limit: 20 };
     filters.submitterName = member.name;

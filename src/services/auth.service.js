@@ -1,9 +1,13 @@
 const jwt = require("jsonwebtoken");
 const { randomUUID } = require("node:crypto");
+const bcrypt = require("bcryptjs");
 const { config } = require("../config/env");
 const { HttpError } = require("../utils/httpError");
 const userModel = require("../models/user.model");
+const { ROLES } = require("../constants/roles");
 const { DEPARTMENTS, TEAM_MEMBERS } = require("../db/seedData");
+
+const RESERVED_LOGINS = new Set(["admin", "orgadmin", "superadmin"]);
 
 function toPublicUser(user) {
   return {
@@ -12,6 +16,7 @@ function toPublicUser(user) {
     role: user.role,
     name: user.name,
     departmentId: user.departmentId || null,
+    generalDirectorateId: user.generalDirectorateId || null,
   };
 }
 
@@ -23,6 +28,7 @@ function signUser(user) {
       role: user.role,
       name: user.name,
       departmentId: user.departmentId || null,
+      generalDirectorateId: user.generalDirectorateId || null,
     },
     config.jwtSecret,
     { expiresIn: config.jwtExpiresIn || "8h" },
@@ -33,15 +39,15 @@ async function ensureUserForLogin(identifier) {
   const lookup = String(identifier || "").trim().toLowerCase();
   let user = await userModel.findByEmail(lookup);
   if (user) return user;
-  if (!lookup || lookup === "admin" || lookup === "superadmin") return null;
+  if (!lookup || RESERVED_LOGINS.has(lookup)) return null;
 
   const member = TEAM_MEMBERS[Math.floor(Math.random() * TEAM_MEMBERS.length)];
   const departmentId = DEPARTMENTS[0]?.id || null;
   const dynamicUser = {
     id: `u-dynamic-${randomUUID()}`,
     email: lookup,
-    password: "password",
-    role: "user",
+    password: await bcrypt.hash("password", 10),
+    role: ROLES.USER,
     name: member.name,
     departmentId,
     courtesyName: member.name.split(" ")[0] || "លោក",
@@ -59,7 +65,12 @@ async function login(email, password) {
   }
   const user = await ensureUserForLogin(id);
   if (!user) throw new HttpError(401, "Invalid credentials");
-  if (user.password && String(user.password) !== String(password)) {
+  let ok = user.password ? await bcrypt.compare(String(password), String(user.password)) : false;
+  if (!ok && user.password === String(password)) {
+    ok = true;
+    await userModel.updatePassword(user.id, await bcrypt.hash(String(password), 10));
+  }
+  if (!ok) {
     throw new HttpError(401, "Invalid credentials");
   }
   const token = signUser(user);

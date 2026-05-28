@@ -11,6 +11,7 @@ function mapUserRow(row) {
     courtesyName: row.courtesy_name,
     phone: row.phone,
     departmentId: row.department_id,
+    generalDirectorateId: row.general_directorate_id,
     initials: row.initials,
   };
 }
@@ -30,8 +31,8 @@ async function findById(id) {
 async function createUser(user, conn = null) {
   const db = conn || getPool();
   await db.query(
-    `INSERT INTO users (id, email, password, role, name, courtesy_name, phone, department_id, initials)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO users (id, email, password, role, name, courtesy_name, phone, department_id, general_directorate_id, initials)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       user.id,
       user.email,
@@ -41,19 +42,30 @@ async function createUser(user, conn = null) {
       user.courtesyName || "លោក",
       user.phone || "",
       user.departmentId || null,
+      user.generalDirectorateId || null,
       user.initials || null,
     ],
   );
   return user;
 }
 
-async function listTeamMembers(departmentId = null) {
+async function updatePassword(userId, hashedPassword, conn = null) {
+  const db = conn || getPool();
+  await db.query("UPDATE users SET password = ? WHERE id = ?", [hashedPassword, userId]);
+}
+
+async function listTeamMembers(scope = {}) {
   const pool = getPool();
   let sql = `SELECT id, name, role AS member_role, initials FROM users WHERE role = 'user'`;
   const params = [];
-  if (departmentId) {
+  if (scope.departmentId) {
     sql += " AND department_id = ?";
-    params.push(departmentId);
+    params.push(scope.departmentId);
+  } else if (scope.generalDirectorateId) {
+    sql += ` AND department_id IN (
+      SELECT id FROM departments WHERE general_directorate_id = ?
+    )`;
+    params.push(scope.generalDirectorateId);
   }
   sql += " ORDER BY name";
   const [rows] = await pool.query(sql, params);
@@ -71,4 +83,5 @@ module.exports = {
   findById,
   listTeamMembers,
   mapUserRow,
+  updatePassword,
 };

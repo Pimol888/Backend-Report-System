@@ -32,12 +32,19 @@ function joinRoomsForUser(socket, payload) {
     role: payload.role,
     name: payload.name,
     departmentId: payload.departmentId || null,
+    generalDirectorateId: payload.generalDirectorateId || null,
   };
 
   socket.join(ROOMS.user(userId));
 
-  if (payload.role === "admin" || payload.role === "superadmin") {
+  if (payload.role === "admin" || payload.role === "orgadmin" || payload.role === "superadmin") {
     socket.join(ROOMS.admins());
+  }
+  if (payload.role === "orgadmin") {
+    socket.join(ROOMS.orgadmins());
+    if (payload.generalDirectorateId) {
+      socket.join(ROOMS.generalDirectorate(payload.generalDirectorateId));
+    }
   }
   if (payload.role === "superadmin") {
     socket.join(ROOMS.superadmins());

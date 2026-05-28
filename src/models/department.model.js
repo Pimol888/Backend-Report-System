@@ -1,6 +1,6 @@
 const { getPool } = require("../db/pool");
 
-async function listDepartments(departmentId = null) {
+async function listDepartments(scope = {}) {
   const pool = getPool();
   let sql = `
     SELECT d.id, d.name, d.general_directorate_id AS generalDirectorateId, g.name AS generalDirectorateName
@@ -8,9 +8,12 @@ async function listDepartments(departmentId = null) {
     JOIN general_directorates g ON g.id = d.general_directorate_id
   `;
   const params = [];
-  if (departmentId) {
+  if (scope.departmentId) {
     sql += " WHERE d.id = ?";
-    params.push(departmentId);
+    params.push(scope.departmentId);
+  } else if (scope.generalDirectorateId) {
+    sql += " WHERE d.general_directorate_id = ?";
+    params.push(scope.generalDirectorateId);
   }
   sql += " ORDER BY d.name";
   const [rows] = await pool.query(sql, params);

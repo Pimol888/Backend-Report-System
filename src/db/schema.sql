@@ -16,14 +16,16 @@ CREATE TABLE IF NOT EXISTS users (
   id VARCHAR(64) PRIMARY KEY,
   email VARCHAR(191) NOT NULL UNIQUE,
   password VARCHAR(255) NOT NULL,
-  role ENUM('user', 'admin', 'superadmin') NOT NULL DEFAULT 'user',
+  role ENUM('user', 'admin', 'orgadmin', 'superadmin') NOT NULL DEFAULT 'user',
   name VARCHAR(255) NOT NULL,
   courtesy_name VARCHAR(64) NOT NULL DEFAULT 'លោក',
   phone VARCHAR(64) NOT NULL DEFAULT '',
   department_id VARCHAR(64) NULL,
+  general_directorate_id VARCHAR(64) NULL,
   initials VARCHAR(16) NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_users_department FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL
+  CONSTRAINT fk_users_department FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL,
+  CONSTRAINT fk_users_gd FOREIGN KEY (general_directorate_id) REFERENCES general_directorates(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS reports (

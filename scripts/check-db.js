@@ -26,9 +26,10 @@ const TABLES = [
     }
 
     const [admins] = await pool.query(
-      "SELECT id, email, role, name, department_id FROM users WHERE role IN ('admin','superadmin')",
+      `SELECT id, email, role, name, department_id, general_directorate_id
+       FROM users WHERE role IN ('admin','orgadmin','superadmin')`,
     );
-    console.log("\nAdmin / superadmin accounts:");
+    console.log("\nStaff accounts (admin / orgadmin / superadmin):");
     for (const u of admins) console.log(" -", u);
   } catch (err) {
     console.error("Check failed:", err.message);

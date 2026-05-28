@@ -2,8 +2,11 @@ const { emitToRooms } = require("./socket");
 const { EVENTS, ROOMS } = require("./events");
 
 function reportRooms(report, { includeSubmitter = true } = {}) {
-  const rooms = [ROOMS.admins(), ROOMS.superadmins()];
+  const rooms = [ROOMS.admins(), ROOMS.superadmins(), ROOMS.orgadmins()];
   if (report.departmentId) rooms.push(ROOMS.department(report.departmentId));
+  if (report.generalDirectorateId) {
+    rooms.push(ROOMS.generalDirectorate(report.generalDirectorateId));
+  }
   if (includeSubmitter && report.submitterId) rooms.push(ROOMS.user(report.submitterId));
   return rooms;
 }

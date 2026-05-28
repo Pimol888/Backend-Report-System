@@ -50,7 +50,7 @@ function createApp() {
         departments: "GET /api/departments",
         generalDirectorates: "GET /api/general-directorates",
       },
-      roles: ["user", "admin", "superadmin"],
+      roles: ["user", "admin", "orgadmin", "superadmin"],
       cycles: ["monthly", "quarterly", "semiannual", "yearly"],
       statuses: ["pending", "reviewed"],
       socket: {
